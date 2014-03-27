@@ -5,9 +5,10 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Data;
+using System.Text.RegularExpressions;
+using System.Reflection;
 
 using RyuaNerin;
-using System.Text.RegularExpressions;
 
 namespace AheuiCSharp
 {
@@ -15,11 +16,15 @@ namespace AheuiCSharp
 	{
 		static void PrintHelp()
 		{
+			Version ver = Assembly.GetExecutingAssembly().GetName().Version;
+			Console.WriteLine("Aheui C# v {0}.{1}.{2}", ver.Major, ver.Minor, ver.Build);
+			Console.WriteLine();
 			Console.WriteLine("Usage: {0} <filename> [options]", Regex.Match("/([^\"]+)\"", Environment.CommandLine.Replace('\\', '/')).Groups[1].Value);
 			Console.WriteLine("--help,     -h  : Prints help message");
 			Console.WriteLine("--version,  -v  : Prints Version Information");
 			Console.WriteLine("--stackmin, -sn : Set default stack size ( default : 64 )");
 			Console.WriteLine("--stackmax, -sx : Set maximum stack size ( default : 4096 )");
+			Console.WriteLine("--debug,    -d  : DebugMode");
 			Console.WriteLine("--encoding, -e  : Set the encoding of source code (default :  utf-8 )");
 			Console.WriteLine("    ascii, utf-7, utf-8, utf-16, utf-32, unicode");
 			Console.WriteLine();
@@ -44,6 +49,7 @@ namespace AheuiCSharp
 			CommandLineParser parser = new CommandLineParser();
 			parser.AddOptions("--help", "-h");
 			parser.AddOptions("--version", "-v");
+			parser.AddOptions("--debug", "-d");
 			parser.AddOptionsDefault("utf-8", "--encoding", "-e");
 			parser.AddOptionsDefault("64", "--stackmin", "-sn");
 			parser.AddOptionsDefault("4096", "--stackmax", "-sx");
@@ -93,29 +99,33 @@ namespace AheuiCSharp
 					return 1;
 			}
 
-			RyuaNerin.Aheui au = new RyuaNerin.Aheui();
+			int min;
+			if (!int.TryParse(parser.GetOptionValue("--stackmin"), out min) || (min < 0))
+			{
+				PrintVersion();
+				return 1;
+			}
+
+			int max;
+			if (!int.TryParse(parser.GetOptionValue("--stackmax"), out max) || (max < 0) || (max < min))
+			{
+				PrintVersion();
+				return 1;
+			}
+
+			RyuaNerin.Aheui au = new RyuaNerin.Aheui(min, max);
 			au.init(File.ReadAllText(parser.GetCommand(0), encoding));
 
-			int i;
+			au.StackMinSize = min;
+			au.StackMaxSize = max;
 
-			if (!int.TryParse(parser.GetOptionValue("--stackmin"), out i))
-			{
-				PrintVersion();
-				return 1;
-			}
-			au.StackMinSize = (i / 4);
-
-			if (!int.TryParse(parser.GetOptionValue("--stackmax"), out i))
-			{
-				PrintVersion();
-				return 1;
-			}
-			au.StackMaxSize = (i / 4);
+			bool debugMode = parser.GetOption("--debug");
 
 			while (au.isRunning)
 			{
 				if (au.state == RyuaNerin.Aheui.State.WAITING_CHAR)
 				{
+					Console.WriteLine();
 					Console.WriteLine(au.GetResult());
 					Console.Write("Input Char : ");
 					au.SetInput(Console.ReadLine());
@@ -123,15 +133,26 @@ namespace AheuiCSharp
 				}
 				else if (au.state == RyuaNerin.Aheui.State.WAITING_NUMBER)
 				{
+					Console.WriteLine();
 					Console.Write("Input Number : ");
 					Console.Write(au.GetResult());
 					au.SetInput(Console.ReadLine());
 				}
 
 				au.Step();
+
+				if (debugMode)
+				{
+					Console.Clear();
+					Console.WriteLine(au.ToString());
+					Console.WriteLine();
+					Console.WriteLine(au.GetTotalResult());
+					Console.ReadKey();
+				}
 			}
 
-			Console.WriteLine(au.GetResult());
+			if (!debugMode)
+				Console.WriteLine(au.GetResult());
 
 			return 0;
 		}

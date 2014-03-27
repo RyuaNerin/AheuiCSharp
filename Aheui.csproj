@@ -53,6 +53,9 @@
     </None>
     <None Include="readme.md" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="hellowworld description.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>

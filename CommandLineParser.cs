@@ -1,4 +1,8 @@
-﻿using System;
+﻿// RyuaNerin
+// CommandLineParser v1.0.1
+// 2014.03.28
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -28,12 +32,7 @@ namespace RyuaNerin
 
 		public void AddOptions(params string[] key)
 		{
-			this.dicOptionDefaultValue.Add(null);
-
-			int index = this.dicOptionDefaultValue.Count - 1;
-
-			for (int i = 0; i < key.Length; i++)
-				this.dicOptionKey.Add(key[i], index);
+			this.AddOptionsDefault(null, key);
 		}
 		public void AddOptionsDefault(string defaultValue, params string[] key)
 		{
@@ -85,7 +84,7 @@ namespace RyuaNerin
 		}
 		public string GetCommand(int index)
 		{
-			if ((index < 0) || (index > this.dicParsedCommand.Count))
+			if ((index < 0) || (index >= this.dicParsedCommand.Count))
 				return null;
 
 			return this.dicParsedCommand[index];
